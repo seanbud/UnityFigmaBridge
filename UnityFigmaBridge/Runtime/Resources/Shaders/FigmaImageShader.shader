@@ -28,6 +28,7 @@ Shader "Figma/FigmaImageShader"
         _StrokeWidth ("Stroke Width", Float) = 2
         _StrokeColor ("Stroke Color", Color) = (1,1,1,1)
         _FillColor ("Fill Color", Color) = (1,1,1,1)
+        _SdfSmooth ("SDF Smoothing", Float) = 0.15 // <-- new property
         
         // End Figma properties
     }
@@ -116,6 +117,8 @@ Shader "Figma/FigmaImageShader"
             float4 _CornerRadius;
             float4 _StrokeColor;
             float _StrokeWidth;
+
+            float _SdfSmooth; // <-- new uniform
 
             float4 _GradientColors[16];
             float _GradientStops[16];
@@ -382,7 +385,7 @@ Shader "Figma/FigmaImageShader"
                 const float scale=1;
                 // Calculate alpha value based on distance from edge
                 
-                float alpha = saturate(-distance_from_shape* scale);
+                float alpha = saturate(-distance_from_shape / _SdfSmooth);
                 
                 #if ARC_ANGLE_RANGE
                     // Limit depending on angle range
@@ -394,9 +397,10 @@ Shader "Figma/FigmaImageShader"
                 
                 
                 #if STROKE
-                    // Apply stroke color (rewrite?)
-                    float strokeBlend = saturate(-(distance_from_shape + _StrokeWidth)*scale);
-                    color = half4(lerp(_StrokeColor.rgb, color.rgb, strokeBlend), lerp(_StrokeColor.a, color.a, strokeBlend));
+                    float strokeEdge = distance_from_shape + _StrokeWidth;
+                    float strokeBlend = saturate(-strokeEdge / _SdfSmooth);
+                    color = half4(lerp(_StrokeColor.rgb, color.rgb, strokeBlend),
+                                lerp(_StrokeColor.a, color.a, strokeBlend));
                 #endif
                 color.a *= alpha;
 

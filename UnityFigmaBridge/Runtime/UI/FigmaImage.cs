@@ -85,6 +85,18 @@ namespace UnityFigmaBridge.Runtime.UI
         private static readonly int s_GradientHandlePositionsPropertyID = Shader.PropertyToID("_GradientHandlePositions");
         private static readonly int s_GradientNumStopsPropertyID = Shader.PropertyToID("_GradientNumStops");
         private static readonly int s_ArcAngleRangeInnerRadiusPropertyID = Shader.PropertyToID("_ArcAngleRangeInnerRadius");
+        private static readonly int s_SdfSmoothPropertyID = Shader.PropertyToID("_SdfSmooth");
+
+        [SerializeField] protected float m_SdfSmooth = 0.25f;
+        public float SdfSmooth
+        {
+            get => m_SdfSmooth;
+            set
+            {
+                m_SdfSmooth = value;
+                base.SetMaterialDirty();
+            }
+        }
         
 
         private const string FIGMA_SHADER_NAME = "Figma/FigmaImageShader";
@@ -452,6 +464,7 @@ namespace UnityFigmaBridge.Runtime.UI
             mat.SetColor(s_StrokeColorPropertyID, m_StrokeColor);
             mat.SetFloat(s_StrokeWidthPropertyID, m_StrokeWidth);
             mat.SetColor(s_FillColorPropertyID,m_FillColor);
+            mat.SetFloat(s_SdfSmoothPropertyID, m_SdfSmooth);
             // Encode limits on arc angle range and inner radius
             mat.SetVector(s_ArcAngleRangeInnerRadiusPropertyID,new Vector4(m_EllipseArcAngleRange.x,m_EllipseArcAngleRange.y,m_EllipseInnerRadius,0));
             

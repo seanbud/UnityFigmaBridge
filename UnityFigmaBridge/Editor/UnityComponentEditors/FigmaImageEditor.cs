@@ -12,6 +12,7 @@ namespace UnityFigmaBridge.Editor.UnityComponentEditors
         private SerializedProperty m_FillColor;
         private SerializedProperty m_StrokeColor;
         private SerializedProperty m_StrokeWidth;
+        private SerializedProperty m_SdfSmooth;
         private SerializedProperty m_CornerRadius;
         private SerializedProperty m_Fill;
         private SerializedProperty m_FillGradient;
@@ -32,6 +33,7 @@ namespace UnityFigmaBridge.Editor.UnityComponentEditors
             m_FillColor = serializedObject.FindProperty("m_FillColor");
             m_StrokeColor = serializedObject.FindProperty("m_StrokeColor");
             m_StrokeWidth = serializedObject.FindProperty("m_StrokeWidth");
+            m_SdfSmooth = serializedObject.FindProperty("m_SdfSmooth");
             m_CornerRadius= serializedObject.FindProperty("m_CornerRadius");
             m_Fill= serializedObject.FindProperty("m_Fill");
             m_FillGradient= serializedObject.FindProperty("m_FillGradient");
@@ -50,6 +52,7 @@ namespace UnityFigmaBridge.Editor.UnityComponentEditors
             EditorGUILayout.PropertyField(m_FillColor);
             EditorGUILayout.PropertyField(m_StrokeColor);
             EditorGUILayout.PropertyField(m_StrokeWidth);
+            EditorGUILayout.PropertyField(m_SdfSmooth);
             EditorGUILayout.PropertyField(m_CornerRadius);
             EditorGUILayout.PropertyField(m_Fill);
             EditorGUILayout.PropertyField(m_FillGradient);
