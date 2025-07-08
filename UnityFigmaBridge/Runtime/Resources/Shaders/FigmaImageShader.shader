@@ -144,23 +144,46 @@ Shader "Figma/FigmaImageShader"
 
                
                 #if SHAPE_RECTANGLE
-                     // Clamp corner radius (TR/BR/TL/BL) - the combined radius on any edge should not exceed the length
-                    float cornerSizeTopRatio=max(1,(_CornerRadius.x+_CornerRadius.z)/v.normalised_pos_size.z);
-                    float cornerSizeBottomRatio=max(1,(_CornerRadius.y+_CornerRadius.w)/v.normalised_pos_size.z);
-                    float cornerSizeLeftRatio=max(1,(_CornerRadius.z+_CornerRadius.w)/v.normalised_pos_size.w);
-                    float cornerSizeRightRatio=max(1,(_CornerRadius.x+_CornerRadius.y)/v.normalised_pos_size.w);
+                    float width  = max(1.0, v.normalised_pos_size.z);
+                    float height = max(1.0, v.normalised_pos_size.w);
 
-                    float4 clampedCornerRadius=float4(_CornerRadius.x,_CornerRadius.y,_CornerRadius.z,_CornerRadius.w);
-                
-                    // Divide by the largest of the relevant ratios such that the corner is only constrained by the smallest side.
-                    clampedCornerRadius.x/=max(cornerSizeTopRatio,cornerSizeRightRatio);
-                    clampedCornerRadius.y/=max(cornerSizeBottomRatio,cornerSizeRightRatio);
-                    clampedCornerRadius.z/=max(cornerSizeTopRatio,cornerSizeLeftRatio);
-                    clampedCornerRadius.w/=max(cornerSizeBottomRatio,cornerSizeLeftRatio);
-                
-                    OUT.clamped_corner_radius=clampedCornerRadius;
+                    float leftMax = height * 0.5;
+
+                    // LEFT side clamp calc
+                    float unclampedLeftTop = _CornerRadius.z / max(1.0, (_CornerRadius.x + _CornerRadius.z) / width);
+                    float unclampedLeftBot = _CornerRadius.w / max(1.0, (_CornerRadius.y + _CornerRadius.w) / width);
+                    float clampedLeftTop   = min(unclampedLeftTop, leftMax);
+                    float clampedLeftBot   = min(unclampedLeftBot, leftMax);
+
+                    // Freeze left side once width drops below height
+                    float freezeLerp = saturate((width - 0.5 * height) / (0.5 * height)); // from width=0.5h → h
+                    float leftTop = lerp(leftMax, clampedLeftTop, freezeLerp);
+                    float leftBot = lerp(leftMax, clampedLeftBot, freezeLerp);
+
+                    // RIGHT side
+                    float unclampedRightTop = _CornerRadius.x / max(1.0, (_CornerRadius.x + _CornerRadius.y) / width);
+                    float unclampedRightBot = _CornerRadius.y / max(1.0, (_CornerRadius.x + _CornerRadius.y) / width);
+                    float rightMax = height * 0.5;
+                    float clampedRightTop = min(unclampedRightTop, rightMax);
+                    float clampedRightBot = min(unclampedRightBot, rightMax);
+
+                    // Blend right side to left as it shrinks
+                    float blendStart = rightMax * 2.0;
+                    float blendEnd   = rightMax;
+                    float blendT     = saturate((width - blendEnd) / (blendStart - blendEnd));
+                    float ease       = blendT * blendT * (3.0 - 2.0 * blendT); // smoothstep
+
+                    float preRightTop = lerp(leftTop, clampedRightTop, ease);
+                    float preRightBot = lerp(leftBot, clampedRightBot, ease);
+
+                    // Collapse right fully when ultra narrow
+                    float collapseT = saturate(1.0 - (width / rightMax));
+                    float rightTop = lerp(preRightTop, leftTop, collapseT);
+                    float rightBot = lerp(preRightBot, leftBot, collapseT);
+
+                    float4 clampedCornerRadius = float4(rightTop, rightBot, leftTop, leftBot);
+                    OUT.clamped_corner_radius = clampedCornerRadius;
                 #endif
-                
 
                 // Encode the relative position and size pos
                 OUT.normalised_position= float2(v.normalised_pos_size.x,v.normalised_pos_size.y);
